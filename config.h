@@ -77,7 +77,7 @@
 #define PACKAGE_URL ""
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "1.4.1"
+#define PACKAGE_VERSION "1.4.1-bigtiff"
 
 /* The size of `signed int', as computed by sizeof. */
 #define SIZEOF_SIGNED_INT 4
