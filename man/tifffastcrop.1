@@ -2,7 +2,7 @@
 .SH NAME
 .PP
 .nf
-  tifffastcrop \- extracts (crops) a rectangular region from a tiff 
+  tifffastcrop \- extracts (crops) a rectangular region from a tiff
 file, avoiding loading the full source image input.tif into memory.
 .fi
 
@@ -15,44 +15,44 @@ file, avoiding loading the full source image input.tif into memory.
 .SH DESCRIPTION
 
 .PP
-tifffastcrop takes a single-image TIFF file, reads the rectangular 
-region of width w, length l, and top left corner at position (x,y) in 
-pixels and stores it into a new file. The function is similar to what 
-tiffcrop from LibTIFF does but tifffastcrop works also on very large 
-TIFF files and it tries to read as little as possible from the source 
-image into memory, whereas many programs open the whole image even if a 
-very small region is requested. Therefore, it is much faster on large 
+tifffastcrop takes a single-image TIFF file, reads the rectangular
+region of width w, length l, and top left corner at position (x,y) in
+pixels and stores it into a new file. The function is similar to what
+tiffcrop from LibTIFF does but tifffastcrop works also on very large
+TIFF files and it tries to read as little as possible from the source
+image into memory, whereas many programs open the whole image even if a
+very small region is requested. Therefore, it is much faster on large
 files.
 
 .PP
-If the "output" name is provided, the result is stored into a file with 
-that name, in the format guessed from the extension of this filename if 
-guess is possible (and in TIFF format if not), or in the format 
-specified by options. Otherwise, the name given to the output file is 
-created by adding the specification of the cropped region after the name 
+If the "output" name is provided, the result is stored into a file with
+that name, in the format guessed from the extension of this filename if
+guess is possible (and in TIFF format if not), or in the format
+specified by options. Otherwise, the name given to the output file is
+created by adding the specification of the cropped region after the name
 of the original image and before the extension.
 
 
 .SH PERFORMANCES
 
 .PP
-In principle, cropping a (small) region from a large TIFF file can also 
-be achieved with several tools, as tiffcrop, ImageMagick and 
-GraphicsMagick. However, most of the programs start with opening and 
-deciphering the whole image either in memory or in a huge temporary 
-file on the disk, which makes them quite slow, and often unable to 
+In principle, cropping a (small) region from a large TIFF file can also
+be achieved with several tools, as tiffcrop, ImageMagick and
+GraphicsMagick. However, most of the programs start with opening and
+deciphering the whole image either in memory or in a huge temporary
+file on the disk, which makes them quite slow, and often unable to
 complete the task by lack of memory.
 
 .PP
 
-In contrast, tifffastcrop reads as little as possible from the source 
-image. If the input file is a tiled TIFF with reasonable tile size, it 
-should read barely more than the cropped region. This yields speedup 
-and guarantees successful termination of the process even on computers 
-with modest memory. Eg. to crop a region of size 256x256 pixels in the 
-middle of a JPEG-compressed tiled TIFF image of size 180224x70144, 
-on a computer with 16 GiB of RAM and an i7 CPU, tifffastcrop 
-needs 0.3 seconds while GraphicsMagick needs more than 80 minutes and 
+In contrast, tifffastcrop reads as little as possible from the source
+image. If the input file is a tiled TIFF with reasonable tile size, it
+should read barely more than the cropped region. This yields speedup
+and guarantees successful termination of the process even on computers
+with modest memory. Eg. to crop a region of size 256x256 pixels in the
+middle of a JPEG-compressed tiled TIFF image of size 180224x70144,
+on a computer with 16 GiB of RAM and an i7 CPU, tifffastcrop
+needs 0.3 seconds while GraphicsMagick needs more than 80 minutes and
 tiffcrop and ImageMagick fail.
 
 .SH OPTIONS
@@ -68,75 +68,80 @@ with noisy dialog boxes.
 .TP
 .B -E <x in pixels>,<y in pixels>,<width in pixels>,<length in pixels>
 
-Specification of the rectangular region to extract (crop). The top left 
-corner (x,y) has to be inside the source image. Special value -1 for 
-width or length means "as big as possible". If the rectangle extends 
-beyond the limits of the source image, its dimensions are adjusted. 
-Examples: -E 10,20,512,256 or -E 0,0,-1,-1 (the latter means full image, 
+Specification of the rectangular region to extract (crop). The top left
+corner (x,y) has to be inside the source image. Special value -1 for
+width or length means "as big as possible". If the rectangle extends
+beyond the limits of the source image, its dimensions are adjusted.
+Examples: -E 10,20,512,256 or -E 0,0,-1,-1 (the latter means full image,
 whatever its dimensions).
 
 .TP
 .B -o <offset in bytes>
 
-Specify that only image in TIFF directory at position offset in source 
+Specify that only image in TIFF directory at position offset in source
 file will be read and handled. Takes precedence over -d option.
+
+.TP
+.B -B
+
+Write a BigTIFF format file.
 
 .TP
 .B -d <range 1>[,<range 2>...]
 
-Specify non-empty ranges of TIFF directory numbers (starting at 0) from 
-which extracts should be made. A range is specified as <starting 
-number>-<ending number> or <starting number>:<ending number>. Ending 
-number is included: for instance, range 3-3 means fourth directory. If 
-starting number is omitted, is it assumed to be 0 (first directory). If 
-ending number is omitted or -1, it means the last directory of the file. 
+Specify non-empty ranges of TIFF directory numbers (starting at 0) from
+which extracts should be made. A range is specified as <starting
+number>-<ending number> or <starting number>:<ending number>. Ending
+number is included: for instance, range 3-3 means fourth directory. If
+starting number is omitted, is it assumed to be 0 (first directory). If
+ending number is omitted or -1, it means the last directory of the file.
 
  If several -d options are given, their ranges cumulate.
 
 .TP
 .B -j[#]
-Requests output of JPEG files rather than the default TIFF. Optional 
-number # in the range 0 to 100 indicates wanted JPEG quality (default is 
+Requests output of JPEG files rather than the default TIFF. Optional
+number # in the range 0 to 100 indicates wanted JPEG quality (default is
 75).
 
 .TP
 .B -p[#]
-Requests output of PNG files rather than the default TIFF. Optional 
-number # in the range 0 to 9 indicates wanted PNG compression level 
+Requests output of PNG files rather than the default TIFF. Optional
+number # in the range 0 to 9 indicates wanted PNG compression level
 (default is currently 6).
 
- If several of -j, -p, and -c options are given, only the last one takes 
+ If several of -j, -p, and -c options are given, only the last one takes
 effect.
 
 .TP
 .B -c <method>[:opt[:opt]...]
-Requests output of TIFF files compressed with method. Method can be 
-`none' for no compression, `jpeg', `lzw', `zip'... as provided by the 
-LibTIFF library (see libtiff (3TIFF)). By default, the same compression 
+Requests output of TIFF files compressed with method. Method can be
+`none' for no compression, `jpeg', `lzw', `zip'... as provided by the
+LibTIFF library (see libtiff (3TIFF)). By default, the same compression
 as in the input TIFF file is used.
 
- Method-specific details of the wished compression can be specified by 
-adding one or several group of characters starting with a colon `:' 
+ Method-specific details of the wished compression can be specified by
+adding one or several group of characters starting with a colon `:'
 after the methods's name, as follows.
 
-Option to (TIFF compressed with) JPEG method: 
+Option to (TIFF compressed with) JPEG method:
  :# set compression quality level as in option -j (see above).
 
 LZW, Deflate (zip) and LZMA2 options:
  :# set predictor value
  :p# set compression level.
 
-For example, -c lzw:2 to get LZW-encoded data with horizontal 
-differencing, -c zip:3:p9 for Deflate encoding with maximum compression 
-level and floating point predictor, -c jpeg:r:50 for JPEG-encoded RGB 
+For example, -c lzw:2 to get LZW-encoded data with horizontal
+differencing, -c zip:3:p9 for Deflate encoding with maximum compression
+level and floating point predictor, -c jpeg:r:50 for JPEG-encoded RGB
 data at quality 50%.
 
- If several of -j, -p, and -c options are given, only the last one takes 
+ If several of -j, -p, and -c options are given, only the last one takes
 effect.
 
 .SH SEE ALSO
 .PP
-.B tiffsplittiles(1), tiffmakemosaic(1), tiffsplit(1), tiffcrop(1), 
+.B tiffsplittiles(1), tiffmakemosaic(1), tiffsplit(1), tiffcrop(1),
 libtiff(3TIFF)
 
 .PP

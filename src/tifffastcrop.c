@@ -8,7 +8,7 @@
  Copyright (c) 1988-1997 Sam Leffler
  Copyright (c) 1991-1997 Silicon Graphics, Inc.
 
- Distributed under the GNU General Public License v3 -- contact the 
+ Distributed under the GNU General Public License v3 -- contact the
  author for commercial use */
 
 /* TODO: fix option "-c jpeg:r" -- presently, it is deactivated */
@@ -70,7 +70,8 @@ static const char JPEG_SUFFIX[] = "jpg";
 static const char PNG_SUFFIX[] = "png";
 static const char * OUTPUT_SUFFIX[]= {TIFF_SUFFIX, JPEG_SUFFIX, PNG_SUFFIX};
 
-static uint32_t defg3opts = (uint32_t) -1;
+static int big_tiff = 0;
+static uint32_t defg3opts = (uint32_t)-1;
 static int jpeg_quality = -1, default_jpeg_quality = 75; /* JPEG quality */
 static int png_quality = -1, default_png_quality = 6; /* PNG quality */
 static int jpegcolormode = JPEGCOLORMODE_RGB;
@@ -315,11 +316,11 @@ static void cpBufToBuf(uint8_t* out_beginningofline, uint32_t out_x,
 	/* Examples of bits in in_bytes:
 	  6+2|8|1+7 -> (6+)2|6+2|6(+2)  11 bits -> 2 bytes, 1 whole byte
 	  6+2|8|7+1 -> (6+)2|6+2|6+2    17 bits -> 3 bytes, 2 whole bytes
-	   Strategy: copy whole bytes. Then make an additional, 
-	  incomplete byte (which shall have 
-	  out_samplesinincompletelastbyte samples) with the remaining (not 
-	  yet copied) bits of current byte in input and, if these bits 
-	  are not enough, the first in_bitstoreadinlastbyte bits of next 
+	   Strategy: copy whole bytes. Then make an additional,
+	  incomplete byte (which shall have
+	  out_samplesinincompletelastbyte samples) with the remaining (not
+	  yet copied) bits of current byte in input and, if these bits
+	  are not enough, the first in_bitstoreadinlastbyte bits of next
 	  byte in input. */
 	uint8_t* out_wholeoutbytes = out_beginningofline +
 		out_x_start_whole_outbytes / samplesperbyte;
@@ -650,7 +651,7 @@ static int cpStrips2Strip(TIFF* in,
 		uint32_t y;
 
 		if (*y_of_last_read_scanline > ymin) {
-		/* If we need to go back, finish reading to the end, 
+		/* If we need to go back, finish reading to the end,
 		 * then a restart will be automatic */
 			for (y = *y_of_last_read_scanline + 1 ;
 			     y < inimagelength ; y++)
@@ -828,7 +829,7 @@ static int makeExtractFromTIFFDirectory(const char * infilename, TIFF * in,
 		if (verbose)
 			fprintf(stderr, "Requested rectangle extends "
 				"outside the image. Adjusting "
-				"dimensions to " UINT32_FORMAT "x" 
+				"dimensions to " UINT32_FORMAT "x"
 				UINT32_FORMAT ".\n",
 				requestedwidth, requestedlength);
 	}
@@ -891,9 +892,19 @@ static int makeExtractFromTIFFDirectory(const char * infilename, TIFF * in,
 	free(prefix);
 	}
 
+	char tiffOpenMode[6] = "w";
+	if (TIFFIsBigEndian(in)) {
+		strcat(tiffOpenMode, "b");
+	} else {
+		strcat(tiffOpenMode, "l");
+	}
+	if (big_tiff) {
+		strcat(tiffOpenMode, "8");
+	}
+
 	out = output_format != OUTPUT_FORMAT_TIFF ?
 	    (void *) fopen(outfilename, "wb") :
-	    (void *) TIFFOpen(outfilename, TIFFIsBigEndian(in)?"wb":"wl");
+	    (void *) TIFFOpen(outfilename, tiffOpenMode);
 	if (verbose) {
 		if (out == NULL)
 			fprintf(stderr, "Error: unable to open output file"
@@ -1054,9 +1065,9 @@ static int makeExtractFromTIFFDirectory(const char * infilename, TIFF * in,
 		png_set_sBIT(png_ptr, info_ptr, &sig_bit);
 		png_set_compression_level(png_ptr, png_quality);
 		png_write_info(png_ptr, info_ptr);
-		/*png_set_shift(png_ptr, &sig_bit);*/ /* useless 
+		/*png_set_shift(png_ptr, &sig_bit);*/ /* useless
 		 because we support only 1, 2, 4, 8, 16 bit-depths */
-		/*png_set_packing(png_ptr);*/ /* Use *only* if bits are 
+		/*png_set_packing(png_ptr);*/ /* Use *only* if bits are
 		 not yet packed */
 
 		if (((TIFFIsTiled(in) &&
@@ -1211,6 +1222,7 @@ static void usage()
 	fprintf(stderr, "Usage: tifffastcrop [options] input.tif [output_name]\n\n");
 	fprintf(stderr, " Extracts (crops), without loading the full image input.tif into memory, a\nrectangular region from it, and saves it. Output file name is output_name if\ngiven, otherwise a name derived from input.tif. Output file format is guessed\nfrom output_name's extension if possible. Options:\n");
 	fprintf(stderr, " -v                verbose monitoring\n");
+	fprintf(stderr, " -B                write a BigTIFF format file\n");
 	fprintf(stderr, " -T                report TIFF errors/warnings on stderr (no dialog boxes)\n");
 	fprintf(stderr, " -E x,y,w,l        region to extract/crop (x,y: coordinates of top left corner,\n");
 	fprintf(stderr, "   w,l: width and length in pixels)\n");
@@ -1360,7 +1372,7 @@ static int processExtractGeometryOptions(char* cp)
 		cp++;
 	if (sscanf(cp, UINT32_FORMAT "," UINT32_FORMAT ","
 	    UINT32_FORMAT "," UINT32_FORMAT,
-	    &requestedxmin, &requestedymin, &requestedwidth, 
+	    &requestedxmin, &requestedymin, &requestedwidth,
 	    &requestedlength) != 4)
 		return 0;
 	return 1;
@@ -1489,7 +1501,9 @@ int main(int argc, char * argv[])
 
 		if (argv[arg][1] == 'v')
 			verbose = 1;
-		else if (argv[arg][1] == 'T') {
+		else if (argv[arg][1] == 'B') {
+			big_tiff = 1;
+		} else if (argv[arg][1] == 'T') {
 			TIFFSetErrorHandler(stderrErrorHandler);
 			TIFFSetWarningHandler(stderrWarningHandler);
 			}
