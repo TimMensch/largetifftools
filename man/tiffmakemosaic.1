@@ -1,0 +1,187 @@
+.TH tiffmakemosaic 1 "December 30th, 2021" "LargeTIFFTools 1.4.1"
+.SH NAME
+.PP
+.nf
+  tiffmakemosaic \- splits one or more TIFF file into mosaic(s) (set(s) 
+of TIFF or JPEG files smaller than a chosen size that would reproduce 
+the original file if glued together)
+.fi
+
+.SH USAGE
+.PP
+.nf
+  tiffmakemosaic [options] file1.tif [file2.tif...]
+.fi
+
+.SH DESCRIPTION
+
+.PP
+tiffmakemosaic takes one or more single-image TIFF files and creates, 
+for each one of these, a mosaic (if needed). A mosaic is a set of TIFF 
+files that would reproduce the original image if glued together (e.g. 
+with ImageMagick or GraphicsMagick's montage command). Unless an 
+explicit dimension is requested, all pieces of a mosaic have the same 
+width and length and these dimensions are submultiples of the original 
+image's dimensions. They are chosen so that each piece of the mosaic is 
+smaller than a given size. Therefore, even if the original image is huge 
+and wouldn't fit into the computer's memory, which prevents it to be 
+opened by most software, the pieces will be small enough to be opened 
+easily.
+
+.PP
+A mosaic is produced as soon as the full provided image doesn't meet the 
+requirements of needed memory to open (option -M below), width, or size 
+(option -g below).
+
+.PP
+If requested, it will add some overlap to the adjacent pieces (either of 
+a fixed amount of pixels, or of a percentage of the pieces' width resp. 
+length, will appear on two pieces if they share a common border).
+
+.PP
+The names given to the output files that contain the pieces are created 
+by adding the row and column numbers of the piece after the name of the 
+original image and before the extension.
+
+.SH PERFORMANCES
+
+.PP
+In principle, generating pieces from a large TIFF file can also be 
+achieved with several tools, as tiffcrop, ImageMagick and GraphicsMagick 
+(one has to first compute and specify explicitly the dimensions and 
+positions of the pieces, though). However, most of the programs start 
+with opening and deciphering the whole image either in memory or in a 
+huge temporary file on the disk, which makes them quite slow, and often 
+unable to complete the task by lack of memory.
+
+.PP
+In contrast, tiffmakemosaic avoids opening the whole image, which 
+yields speedup and guarantees successful termination of the process 
+even on computers with modest memory. Eg. to make a mosaic of 64 JPEG 
+files requesting less than 512 MiB of memory to open from a RGB image 
+of 103168x63232 pixels, on a computer with 16 GiB of RAM and an i5 CPU, 
+tiffmakemosaic needs 2.5 minutes while GraphicsMagick needs 70 minutes.
+
+
+.SH OPTIONS
+.TP
+.B -v
+Verbose monitoring.
+
+.TP
+.B -T
+Do not report TIFF errors or warnings. Under Windows, they are reported 
+with noisy dialog boxes.
+
+.TP
+.B -M <size in MiB>
+Dimensions of the pieces of each mosaic will be computed so that no more 
+than the specified amount of memory will be required to open one of 
+them. Defaults to 1024 MiB = 1 GiB = 1073741824 bytes. A value of zero 
+means no limit on the dimensions to achieve a goal of memory 
+requirement (but there may be other limits, e.g. the installed memory 
+in the computer during production of the mosaic).
+
+.TP
+.B -m [width divisor in pixels]x[length divisor in pixels]
+If either dimension is provided, the pieces of the mosaic will be 
+integer multiples of this dimension. If a divisor is zero or is not 
+provided, this option adds no constrain on the corresponding piece 
+dimension.
+
+For instance, -m 8x0 will require that the width of the pieces be a 
+multiple of 8 pixels.
+
+.TP
+.B -g [width in pixels]x[length in pixels]
+If either dimension is provided, the pieces of the mosaic will have 
+exactly this dimension (ignoring the -m option if present), except 
+perhaps for the last piece of each row or the last piece of each column 
+if the dimension is not an exact divisor of the corresponding dimension 
+of the full image. If a dimension is zero or is not provided, it is 
+replaced with the largest value which is compatible with the memory 
+limit (option -M) and divides the corresponding full image dimension by 
+a power of two.
+
+For example, -M 2048 -g x200 will require pieces of length exactly 200 
+pixels (but the pieces in the last row at the bottom of the image may be 
+shorter) and width equal to W/2^n where W is the width of the full image 
+and 2^n is the largest integer power of 2 such that a piece of size 
+W/2^n x 200 pixels requires less than 2048 MiB of memory to open.
+
+.TP
+.B -O <number of pixels | fraction%>
+The adjacent pieces will overlap by that amount: if the border of a 
+piece is not on a outer border of the full image, then the piece will be 
+extended in the corresponding direction by the requested amount. If the 
+amount is given in percent (a decimal number between 0 and 100 included, 
+followed by the `%' symbol), the overlap amount will be the 
+corresponding fraction of the piece's width (if overlapping across a 
+vertical border) resp. length (horizontal border). Horizontal and 
+vertical overlaps can be different. If the amount is given as a number 
+of pixels (must be a nonnegative decimal integer number), the overlap 
+amount will be the specified amount, disregarding the actual dimensions 
+of the pieces. However, the overlap will be truncated down to a piece's 
+width resp. length if it would be larger.
+
+By default, produced mosaics have no overlap.
+
+.TP
+.B -P[X][Y] #[,#...]
+
+If necessary, pad image before making the mosaic, in direction x and/or 
+y (default: both), to satisfy -M, -m or -g requirements. For instance, 
+so that width is a multiple of larger a power of 2. Padding consists in 
+adding to the right and/or to the bottom of the image pixels of value # 
+(if 1 sample/pixel) or #,# (if 2 samples per pixels), and so on. M for # 
+means maximum possible value (e.g. 255 for 8-bit images).
+
+.TP
+.B -j[#]
+Requests output of JPEG files rather than the default TIFF. Optional 
+number # in the range 0 to 100 indicates wanted JPEG quality (default is 
+75).
+
+ If several of -j and -c options are given, only the last one takes 
+effect.
+
+.TP
+.B -c <method>[:opt[:opt]...]
+Requests output of TIFF files compressed with method. Method can be 
+`none' for no compression, `jpeg', `lzw', `zip'... as provided by the 
+LibTIFF library (see libtiff (3TIFF)). By default, the same compression 
+as in the input TIFF file is used.
+
+ Method-specific details of the wished compression can be specified by 
+adding one or several group of characters starting with a colon `:' 
+after the methods's name, as follows.
+
+JPEG method: 
+ :# set compression quality level as in option -j (see above).
+
+LZW, Deflate (zip) and LZMA2 options:
+ :# set predictor value
+ :p# set compression level.
+
+For example, -c lzw:2 to get LZW-encoded data with horizontal 
+differencing, -c zip:3:p9 for Deflate encoding with maximum compression 
+level and floating point predictor, -c jpeg:r:50 for JPEG-encoded RGB 
+data at quality 50%.
+
+ If several of -j and -c options are given, only the last one takes 
+effect.
+
+.SH SEE ALSO
+.PP
+.B tiffsplittiles(1), tifffastcrop(1), tiffsplit(1), tiffcrop(1), 
+libtiff(3TIFF)
+
+.PP
+.B Home Page
+.nf
+http://www.imnc.in2p3.fr/pagesperso/deroulers/software/largetifftools/
+.fi
+
+.SH AUTHOR
+.PP
+Christophe Deroulers

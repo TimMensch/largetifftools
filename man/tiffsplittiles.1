@@ -1,0 +1,56 @@
+.TH tiffsplittiles 1 "December 30th, 2021" "LargeTIFFTools 1.4.1"
+.SH NAME
+.PP
+.nf
+  tiffsplittiles \- Copies tiles from a tiled TIFF file into separate 
+TIFF files
+.fi
+
+.SH USAGE
+.PP
+.nf
+  tiffsplittiles [-t] file.tif
+.fi
+
+.SH DESCRIPTION
+.PP
+tiffsplittiles opens file.tif and deals with its first image only (other 
+images, if present, will be omitted). If this image is tiled, it 
+produces one TIFF file containing each of the tiles; otherwise, it 
+outputs an error message. The compression type of each output file is 
+the same as in the input file. The output TIFF files are stripped by 
+default, or tiled if the option -t is provided on the command line.
+
+.PP
+
+The names given to the output files are created by adding the row and 
+column numbers of the piece after the name of the original image and 
+before the extension.
+
+.PP
+
+To speed up treatment, tiles will be extracted in parallel by the 
+available CPU cores, through the OpenMP library. Set environment 
+variable OMP_NUM_THREADS to n (e.g. 1) to prevent the use of more than n 
+cores.
+
+.SH OPTIONS
+.TP
+.B -T
+Do not report TIFF errors or warnings. Under Windows, they are reported
+with noisy dialog boxes.
+
+.SH SEE ALSO
+.PP
+.B tiffmakemosaic(1), tifffastcrop(1), tiffsplit(1), tiffcrop(1), 
+libtiff(3TIFF)
+
+.PP
+.B Home Page
+.nf
+http://www.imnc.in2p3.fr/pagesperso/deroulers/software/largetifftools/
+.fi
+
+.SH AUTHOR
+.PP
+Christophe Deroulers
